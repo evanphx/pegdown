@@ -393,7 +393,7 @@ StrChunk = < (NormalChar | "_"+ &Alphanumeric)+ > { raise " $$ = mk_str(yytext);
 AposChunk = &{  extension(:EXT_SMART)  } "'" &Alphanumeric
       { raise " $$ = mk_element(APOSTROPHE); " }
 
-EscapedChar =   "\\" !Newline < /[-\\`|*_{}[\]()#+.!><]/ >
+EscapedChar =   "\\" !Newline < /[\`|*_{}\[\]()#+.!><-]/ >
                 { raise " $$ = mk_str(yytext); " }
 
 Entity =    ( HexEntity | DecEntity | CharEntity )
