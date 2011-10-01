@@ -1,6 +1,6 @@
 To quickly test:
 
-    rake generate && ruby -I. test/test_pegdown.rb 
+    rake
 
 LICENSE
 
