@@ -1,6 +1,6 @@
 To quickly test:
 
-ruby -I ~/git/kpeg/lib -S kpeg -o pegdown.rb -f -n PegDown pegdown.kpeg && ruby -I ~/git/kpeg/lib test/test_pegdown.rb
+    rake generate && ruby -I. test/test_pegdown.rb 
 
 LICENSE
 
