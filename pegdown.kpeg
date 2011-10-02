@@ -1,15 +1,22 @@
 %% name = Pegdown
 
 %% {
-  def extension(code)
+  def self.parse text
+    parser = new text
+
+    parser.raise_error unless parser.parse
+
+    parser.result
+  end
+
+  def extension code
     false
   end
 }
 
 root = Doc
 
-Doc =       BOM? StartList:a ( Block:b { "a = cons($$, a);"; a = [b, a] } )*
-            { 'parse_result = reverse(a); '; a.reverse }
+Doc =       BOM? Block*:a { RDoc::Markup::Document.new(*a) }
 
 Block =     BlankLine*
             ( BlockQuote
@@ -29,7 +36,7 @@ Para =      NonindentSpace Inlines:a BlankLine+
             { raise "$$ = a; $$->key = PARA;" }
 
 Plain =     Inlines:a
-            { a } # raise "$$ = a; $$->key = PLAIN;" }
+            { RDoc::Markup::Paragraph.new(*a) } # raise "$$ = a; $$->key = PLAIN;" }
 
 AtxInline = !Newline !(Sp? "#"* Sp Newline) Inline
 
@@ -359,9 +366,9 @@ StyleBlock =    < InStyleTags >
                     }'
                 }
 
-Inlines  =  StartList:a ( !Endline Inline:i { a = [i, a] } # { raise " a = cons($$, a); " }
-                        | Endline:c &Inline { raise " a = cons(c, a); " } )+ Endline?
-            { [:LIST, a] } # raise " $$ = mk_list(LIST, a); " }
+Inlines  =  ( !Endline Inline:i { i }
+            | Endline:c &Inline { c } )+:chunks Endline?
+            { chunks.join }
 
 Inline  = Str
         | Endline
@@ -385,9 +392,9 @@ Space = Spacechar+
           $$->key = SPACE;';
           " " }
 
-Str = StartList:a < NormalChar+ > { a = [text, a] } # raise " a = cons(mk_str(yytext), a); " }
+Str = StartList:a < NormalChar+ > { a = text } # raise " a = cons(mk_str(yytext), a); " }
       ( StrChunk { raise " a = cons($$, a); " } )*
-      { !a[0] ? a : [:LIST, a] } #  { raise " if (a->next == NULL) { $$ = a; } else { $$ = mk_list(LIST, a); } " }
+      { a } #  { raise " if (a->next == NULL) { $$ = a; } else { $$ = mk_list(LIST, a); } " }
 
 StrChunk = < (NormalChar | "_"+ &Alphanumeric)+ > { raise " $$ = mk_str(yytext); " } |
            AposChunk
@@ -621,7 +628,7 @@ OptionallyIndentedLine = Indent? Line
 
 # StartList starts a list data structure that can be added to with cons:
 StartList = &.
-            { nil } # raise " $$ = NULL; " }
+            { [] }
 
 Line =  RawLine
         { raise " $$ = mk_str(yytext); " }
