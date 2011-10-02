@@ -41,11 +41,10 @@ Plain =     Inlines:a
 AtxInline = !Newline !(Sp? "#"* Sp Newline) Inline
 
 AtxStart =  < ( "######" | "#####" | "####" | "###" | "##" | "#" ) >
-            { raise " $$ = mk_element(H1 + (strlen(yytext) - 1)); " }
+            { text.length }
 
-AtxHeading = AtxStart:s Sp? StartList:a ( AtxInline { raise " a = cons($$, a); " } )+ (Sp? "#"* Sp)?  Newline
-            { raise "$$ = mk_list(s->key, a);
-              free(s);" }
+AtxHeading = AtxStart:s Sp? AtxInline+:a (Sp? "#"* Sp)?  Newline
+            { RDoc::Markup::Heading.new(s, *a) }
 
 SetextHeading = SetextHeading1 | SetextHeading2
 
@@ -54,12 +53,14 @@ SetextBottom1 = "===" "="* Newline
 SetextBottom2 = "---" "-"* Newline
 
 SetextHeading1 =  &(RawLine SetextBottom1)
-                  StartList:a ( !Endline Inline { raise " a = cons($$, a); " } )+ Sp? Newline
-                  SetextBottom1 { raise " $$ = mk_list(H1, a); " }
+                  StartList:a ( !Endline Inline:a )+ Sp? Newline
+                  SetextBottom1
+                  { RDoc::Markup::Heading.new(1, *a) }
 
 SetextHeading2 =  &(RawLine SetextBottom2)
-                  StartList:a ( !Endline Inline { raise " a = cons($$, a); " } )+ Sp? Newline
-                  SetextBottom2 { raise " $$ = mk_list(H2, a); " }
+                  StartList:a ( !Endline Inline:a )+ Sp? Newline
+                  SetextBottom2
+                  { RDoc::Markup::Heading.new(2, *a) }
 
 Heading = SetextHeading | AtxHeading
 

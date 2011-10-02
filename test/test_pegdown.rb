@@ -18,6 +18,39 @@ class TestPegdown < MiniTest::Unit::TestCase
     s.chomp
   end
 
+  def test_parse_heading_atx
+    doc = parse "# heading\n"
+
+    expected = @RM::Document.new(
+      @RM::Heading.new(1, "heading"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_heading_setext_dash
+    doc = parse <<-MD
+heading
+---
+    MD
+
+    expected = @RM::Document.new(
+      @RM::Heading.new(2, "heading"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_heading_setext_equals
+    doc = parse <<-MD
+heading
+===
+    MD
+
+    expected = @RM::Document.new(
+      @RM::Heading.new(1, "heading"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_list_bullet
     doc = parse <<-MD
 * one
