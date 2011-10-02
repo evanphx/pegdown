@@ -33,10 +33,10 @@ Block =     BlankLine*
             | Plain )
 
 Para =      NonindentSpace Inlines:a BlankLine+
-            { raise "$$ = a; $$->key = PARA;" }
+            { RDoc::Markup::Paragraph.new(*a) }
 
 Plain =     Inlines:a
-            { RDoc::Markup::Paragraph.new(*a) } # raise "$$ = a; $$->key = PLAIN;" }
+            { RDoc::Markup::Paragraph.new(*a) }
 
 AtxInline = !Newline !(Sp? "#"* Sp Newline) Inline
 
@@ -412,11 +412,10 @@ Endline =   LineBreak | TerminalEndline | NormalEndline
 
 NormalEndline =   Sp Newline !BlankLine !">" !AtxStart
                   !(Line ("===" "="* | "---" "-"*) Newline)
-                  { raise '$$ = mk_str("\n");
-                    $$->key = SPACE;' }
+                  { "\n" }
 
 TerminalEndline = Sp Newline Eof
-                  { raise " $$ = NULL; " }
+                  { }
 
 LineBreak = "  " NormalEndline
             { raise " $$ = mk_element(LINEBREAK); " }
@@ -631,7 +630,7 @@ StartList = &.
             { [] }
 
 Line =  RawLine
-        { raise " $$ = mk_str(yytext); " }
+        #{ a = text }
 RawLine = ( < (!"\r" !"\n" .)* Newline > | < .+ > Eof )
 
 SkipBlock = ( !BlankLine RawLine )+ BlankLine*
