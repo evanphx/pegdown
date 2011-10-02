@@ -32,6 +32,36 @@ class TestPegdown < MiniTest::Unit::TestCase
     assert_equal expected, doc
   end
 
+  def test_parse_paragraph_indent_one
+    doc = parse <<-MD
+ text
+    MD
+
+    expected = @RM::Document.new(@RM::Paragraph.new(" text"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_paragraph_indent_two
+    doc = parse <<-MD
+  text
+    MD
+
+    expected = @RM::Document.new(@RM::Paragraph.new(" text"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_paragraph_indent_three
+    doc = parse <<-MD
+   text
+    MD
+
+    expected = @RM::Document.new(@RM::Paragraph.new(" text"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_para
     doc = parse "it worked\n"
 
@@ -79,6 +109,16 @@ class TestPegdown < MiniTest::Unit::TestCase
 #
 #    assert_equal expected, doc
 #  end
+
+  def test_parse_verbatim
+    doc = parse <<-MD
+    text
+    MD
+
+    expected = @RM::Document.new(@RM::Verbatim.new(["text\n"]))
+
+    assert_equal expected, doc
+  end
 
   def parse text
     Pegdown.parse text

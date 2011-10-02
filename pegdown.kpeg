@@ -79,14 +79,12 @@ BlockQuoteRaw =  StartList:a
 
 NonblankIndentedLine = !BlankLine IndentedLine
 
-VerbatimChunk = StartList:a
-                ( BlankLine { raise ' a = cons(mk_str("\n"), a); ' } )*
-                ( NonblankIndentedLine { raise " a = cons($$, a); " } )+
-                { raise " $$ = mk_str_from_list(a, false); " }
+VerbatimChunk = BlankLine*:a
+                NonblankIndentedLine+:b
+                { a.push(*b) }
 
-Verbatim =     StartList:a ( VerbatimChunk { raise " a = cons($$, a); " } )+
-               { raise '$$ = mk_str_from_list(a, false);
-                 $$->key = VERBATIM;' }
+Verbatim =     VerbatimChunk+:a
+               { RDoc::Markup::Verbatim.new(*a) }
 
 HorizontalRule = NonindentSpace
                  ( "*" Sp "*" Sp "*" (Sp "*")*
