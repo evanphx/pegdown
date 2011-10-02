@@ -15,6 +15,7 @@ rule '.rb' => '.kpeg' do |t|
   kpeg = Gem.bin_path 'kpeg', 'kpeg'
 
   ruby "-rubygems #{kpeg} -fs -o #{t.name} #{t.source}"
+  #ruby "-I ../kpeg/lib ../kpeg/bin/kpeg -fs -o #{t.name} #{t.source}"
 end
 
 Rake::TestTask.new do |t|

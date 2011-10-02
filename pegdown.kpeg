@@ -97,13 +97,12 @@ HorizontalRule = NonindentSpace
 
 Bullet = !HorizontalRule NonindentSpace ("+" | "*" | "-") Spacechar+
 
-BulletList = &Bullet (ListTight | ListLoose)
-             { raise " $$->key = BULLETLIST; " }
+BulletList = &Bullet (ListTight | ListLoose):a
+             { RDoc::Markup::List.new(:BULLET, *a) }
 
-ListTight = StartList:a
-            ( ListItemTight { raise " a = cons($$, a); " } )+
+ListTight = ListItemTight+:a
             BlankLine* !(Bullet | Enumerator)
-            { raise " $$ = mk_list(LIST, a); " }
+            { a }
 
 ListLoose = StartList:a
             ( b:listItem BlankLine*
@@ -128,29 +127,19 @@ ListItem =  ( Bullet | Enumerator )
 
 ListItemTight =
             ( Bullet | Enumerator )
-            StartList:a
-            ListBlock { raise " a = cons($$, a); " }
+            ListBlock:a
             ( !BlankLine
               ListContinuationBlock { raise " a = cons($$, a); " } )*
             !ListContinuationBlock
-            {  raise 'element *raw;
-               raw = mk_str_from_list(a, false);
-               raw->key = RAW;
-               $$ = mk_element(LISTITEM);
-               $$->children = raw;'
-            }
+            { RDoc::Markup::ListItem.new(nil, a) }
 
-ListBlock = StartList:a
-            !BlankLine Line { raise " a = cons($$, a); " }
-            ( ListBlockLine { raise " a = cons($$, a); " } )*
-            { raise " $$ = mk_str_from_list(a, false); " }
+ListBlock = !BlankLine Line:a
+            ListBlockLine*:c
+            { RDoc::Markup::Paragraph.new(a, *c) }
 
 ListContinuationBlock = StartList:a
                         ( < BlankLine* >
-                          {   raise 'if (strlen(yytext) == 0)
-                                   a = cons(mk_str("\001"), a); /* block separator */
-                              else
-                                   a = cons(mk_str(yytext), a);' } )
+                          { a << (text.empty? ? "\001" : text) } )
                         ( Indent ListBlock { raise " a = cons($$, a); " } )+
                         { raise "  $$ = mk_str_from_list(a, false); " }
 
@@ -629,9 +618,9 @@ OptionallyIndentedLine = Indent? Line
 StartList = &.
             { [] }
 
-Line =  RawLine
-        #{ a = text }
-RawLine = ( < (!"\r" !"\n" .)* Newline > | < .+ > Eof )
+Line =  RawLine:a { a }
+RawLine = ( < (!"\r" !"\n" .)* Newline > { text }
+        | < .+ > Eof )
 
 SkipBlock = ( !BlankLine RawLine )+ BlankLine*
           | BlankLine+
