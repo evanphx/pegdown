@@ -91,7 +91,7 @@ HorizontalRule = NonindentSpace
                  | "-" Sp "-" Sp "-" (Sp "-")*
                  | "_" Sp "_" Sp "_" (Sp "_")*)
                  Sp Newline BlankLine+
-                 { raise " $$ = mk_element(HRULE); " }
+                 { RDoc::Markup::Rule.new 1 }
 
 Bullet = !HorizontalRule NonindentSpace ("+" | "*" | "-") Spacechar+
 

@@ -113,6 +113,37 @@ class TestPegdown < MiniTest::Unit::TestCase
     assert_equal expected, doc
   end
 
+  def test_parse_rule_dash
+    doc = parse "- - -\n\n"
+
+    expected = @RM::Document.new(@RM::Rule.new(1))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_rule_underscore
+    doc = parse "_ _ _\n\n"
+
+    expected = @RM::Document.new(@RM::Rule.new(1))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_rule_star
+    doc = parse "* * *\n\n"
+
+    expected = @RM::Document.new(@RM::Rule.new(1))
+
+    assert_equal expected, doc
+  end
+  def test_parse_rule_star
+    doc = parse "* * *\n\n"
+
+    expected = @RM::Document.new(@RM::Rule.new(1))
+
+    assert_equal expected, doc
+  end
+
 #  def test_parse_style
 #    doc = parse <<-MD
 #<style></style>
