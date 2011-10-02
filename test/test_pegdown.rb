@@ -18,10 +18,24 @@ class TestPegdown < MiniTest::Unit::TestCase
     s.chomp
   end
 
-  def test_parse_bullet_list
+  def test_parse_list_bullet
     doc = parse <<-MD
 * one
 * two
+    MD
+
+    expected = @RM::Document.new(
+      @RM::List.new(:BULLET, *[
+        @RM::ListItem.new(nil, @RM::Paragraph.new("one\n")),
+        @RM::ListItem.new(nil, @RM::Paragraph.new("two\n"))]))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_list_number
+    doc = parse <<-MD
+1. one
+1. two
     MD
 
     expected = @RM::Document.new(

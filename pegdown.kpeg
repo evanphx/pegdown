@@ -143,8 +143,8 @@ ListContinuationBlock = StartList:a
 
 Enumerator = NonindentSpace [0-9]+ "." Spacechar+
 
-OrderedList = &Enumerator (ListTight | ListLoose)
-              { raise " $$->key = ORDEREDLIST; " }
+OrderedList = &Enumerator (ListTight | ListLoose):a
+             { RDoc::Markup::List.new(:BULLET, *a) }
 
 ListBlockLine = !BlankLine
                 !( Indent? (Bullet | Enumerator) )
