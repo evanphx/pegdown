@@ -65,18 +65,14 @@ SetextHeading2 =  &(RawLine SetextBottom2)
 Heading = SetextHeading | AtxHeading
 
 BlockQuote = BlockQuoteRaw:a
-             {  raise "$$ = mk_element(BLOCKQUOTE);
-                $$->children = a;"
-             }
+             { RDoc::Markup::BlockQuote.new(*a) }
 
 BlockQuoteRaw =  StartList:a
-                 (( ">" " "? Line { raise " a = cons($$, a); " } )
-                  ( !">" !BlankLine Line { raise " a = cons($$, a); " } )*
-                  ( BlankLine { raise ' a = cons(mk_str("\n"), a); ' } )*
+                 (( ">" " "? Line:l { a << l } )
+                  ( !">" !BlankLine Line:c { a << c } )*
+                  ( BlankLine:n { a << n } )*
                  )+
-                 {   raise '$$ = mk_str_from_list(a, true);
-                     $$->key = RAW;'
-                 }
+                 { a }
 
 NonblankIndentedLine = !BlankLine IndentedLine
 
@@ -104,25 +100,14 @@ ListTight = ListItemTight+:a
             { a }
 
 ListLoose = StartList:a
-            ( b:listItem BlankLine*
-              {   raise 'element *li;
-                  li = b->children;
-                  li->contents.str = realloc(li->contents.str, strlen(li->contents.str) + 3);
-                  strcat(li->contents.str, "\n\n");  /* In loose list, \n\n added to end of each element */
-                  a = cons(b, a);'
-              } )+
-            { raise " $$ = mk_list(LIST, a); " }
+            ( ListItem:b BlankLine* { a << b } )+
+            { a }
 
 ListItem =  ( Bullet | Enumerator )
             StartList:a
-            ListBlock { raise " a = cons($$, a); " }
+            ListBlock:b { a << b }
             ( ListContinuationBlock { raise " a = cons($$, a); " } )*
-            {  raise 'element *raw;
-               raw = mk_str_from_list(a, false);
-               raw->key = RAW;
-               $$ = mk_element(LISTITEM);
-               $$->children = raw;'
-            }
+            { RDoc::Markup::ListItem.new(nil, *a) }
 
 ListItemTight =
             ( Bullet | Enumerator )
@@ -145,7 +130,7 @@ ListContinuationBlock = StartList:a
 Enumerator = NonindentSpace [0-9]+ "." Spacechar+
 
 OrderedList = &Enumerator (ListTight | ListLoose):a
-             { RDoc::Markup::List.new(:BULLET, *a) }
+             { RDoc::Markup::List.new(:NUMBER, *a) }
 
 ListBlockLine = !BlankLine
                 !( Indent? (Bullet | Enumerator) )
@@ -584,7 +569,7 @@ RawHtml =   < (HtmlComment | HtmlBlockScript | HtmlTag) >
                 }'
             }
 
-BlankLine =     Sp Newline
+BlankLine =     Sp Newline { "\n" }
 
 Quoted =        "\"" (!"\"" .)* "\"" | "'" (!"'" .)* "'"
 HtmlAttribute = (AlphanumericAscii | "-")+ Spnl ("=" Spnl (Quoted | (!">" Nonspacechar)+))? Spnl

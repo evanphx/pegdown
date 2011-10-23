@@ -4,6 +4,7 @@ require 'pp'
 
 require 'pegdown'
 require 'rdoc'
+require 'rdoc/markup/block_quote'
 
 class TestPegdown < MiniTest::Unit::TestCase
 
@@ -16,6 +17,59 @@ class TestPegdown < MiniTest::Unit::TestCase
     s = PP.pp obj, s
     s.force_encoding Encoding.default_external if defined? Encoding
     s.chomp
+  end
+
+  def test_parse_block_quote
+    doc = parse <<-BLOCK_QUOTE
+> this is
+> a block quote
+    BLOCK_QUOTE
+
+    expected = @RM::Document.new(
+      @RM::BlockQuote.new("this is\n", "a block quote\n"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_block_quote_continue
+    doc = parse <<-BLOCK_QUOTE
+> this is
+a block quote
+    BLOCK_QUOTE
+
+    expected = @RM::Document.new(
+      @RM::BlockQuote.new("this is\n", "a block quote\n"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_block_quote_newline
+    doc = parse <<-BLOCK_QUOTE
+> this is
+a block quote
+
+    BLOCK_QUOTE
+
+    expected = @RM::Document.new(
+      @RM::BlockQuote.new("this is\n", "a block quote\n", "\n"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_block_quote_separate
+    doc = parse <<-BLOCK_QUOTE
+> this is
+a block quote
+
+> that continues
+    BLOCK_QUOTE
+
+    expected = @RM::Document.new(
+      @RM::BlockQuote.new("this is\n", "a block quote\n",
+                          "\n",
+                          "that continues\n"))
+
+    assert_equal expected, doc
   end
 
   def test_parse_heading_atx
@@ -65,6 +119,21 @@ heading
     assert_equal expected, doc
   end
 
+  def test_parse_list_bullet_continue
+    doc = parse <<-MD
+* one
+
+* two
+    MD
+
+    expected = @RM::Document.new(
+      @RM::List.new(:BULLET, *[
+        @RM::ListItem.new(nil, @RM::Paragraph.new("one\n")),
+        @RM::ListItem.new(nil, @RM::Paragraph.new("two\n"))]))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_list_number
     doc = parse <<-MD
 1. one
@@ -72,7 +141,22 @@ heading
     MD
 
     expected = @RM::Document.new(
-      @RM::List.new(:BULLET, *[
+      @RM::List.new(:NUMBER, *[
+        @RM::ListItem.new(nil, @RM::Paragraph.new("one\n")),
+        @RM::ListItem.new(nil, @RM::Paragraph.new("two\n"))]))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_list_number_continue
+    doc = parse <<-MD
+1. one
+
+1. two
+    MD
+
+    expected = @RM::Document.new(
+      @RM::List.new(:NUMBER, *[
         @RM::ListItem.new(nil, @RM::Paragraph.new("one\n")),
         @RM::ListItem.new(nil, @RM::Paragraph.new("two\n"))]))
 
