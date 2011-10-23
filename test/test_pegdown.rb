@@ -169,13 +169,6 @@ heading
 
     assert_equal expected, doc
   end
-  def test_parse_rule_star
-    doc = parse "* * *\n\n"
-
-    expected = @RM::Document.new(@RM::Rule.new(1))
-
-    assert_equal expected, doc
-  end
 
 #  def test_parse_style
 #    doc = parse <<-MD
