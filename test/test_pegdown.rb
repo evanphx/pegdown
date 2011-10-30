@@ -74,6 +74,30 @@ a block quote
     assert_equal expected, doc
   end
 
+  def test_parse_entity_dec
+    doc = parse "Entity: &#65;"
+
+    expected = doc(para("Entity: A"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_entity_hex
+    doc = parse "Entity: &#x41;"
+
+    expected = doc(para("Entity: A"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_entity_named
+    doc = parse "Entity: &pi;"
+
+    expected = doc(para("Entity: π"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_escape
     doc = parse "Backtick: \\`"
 
