@@ -181,26 +181,6 @@ heading
     assert_equal expected, doc
   end
 
-  def test_parse_html_address
-    @parser.html = true
-
-    doc = parse "<address>Links here</address>"
-
-    expected = @RM::Document.new(
-      @RM::Paragraph.new("<address>Links here</address>"))
-
-    assert_equal expected, doc
-  end
-
-  def test_parse_html_address_no_html
-    doc = parse "<address>Links here</address>"
-
-    expected = @RM::Document.new(
-      @RM::Paragraph.new("Links here"))
-
-    assert_equal expected, doc
-  end
-
   def test_parse_image
     doc = parse "image ![alt text](path/to/image.jpg)"
 
@@ -332,6 +312,26 @@ This is [an example][] reference-style link.
 
     expected = @RM::Document.new(
       @RM::Paragraph.new("it worked ****"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_paragraph_html
+    @parser.html = true
+
+    doc = parse "<address>Links here</address>"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("<address>Links here</address>"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_paragraph_html_no_html
+    doc = parse "<address>Links here</address>"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("Links here"))
 
     assert_equal expected, doc
   end
