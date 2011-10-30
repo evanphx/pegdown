@@ -159,6 +159,15 @@ heading
     assert_equal expected, doc
   end
 
+  def test_parse_line_braek
+    doc = parse "Some text  \nwith extra lines"
+
+    expected = doc(
+      para("Some text  \nwith extra lines"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_link_reference_id
     doc = parse <<-MD
 This is [an example][id] reference-style link.

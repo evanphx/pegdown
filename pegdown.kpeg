@@ -545,10 +545,8 @@ NormalEndline =   Sp Newline !BlankLine !">" !AtxStart
                   { "\n" }
 
 TerminalEndline = Sp Newline Eof
-                  { }
 
-LineBreak = "  " NormalEndline
-            { raise " $$ = mk_element(LINEBREAK); " }
+LineBreak = < "  " NormalEndline > { text }
 
 Symbol = < SpecialChar >
          { text }
