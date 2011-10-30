@@ -694,7 +694,7 @@ Code = ( Ticks1 Sp < (
            !( Sp Ticks5 ) ( Spacechar | Newline !BlankLine )
          )+ > Sp Ticks5
        )
-       { raise " $$ = mk_str(yytext); $$->key = CODE; " }
+       { "<code>#{text}</code>" }
 
 RawHtml = < (HtmlComment | HtmlBlockScript | HtmlTag) >
           { if html? then text else '' end }

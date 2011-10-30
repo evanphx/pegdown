@@ -90,6 +90,14 @@ a block quote
     assert_equal expected, doc
   end
 
+  def test_parse_code
+    doc = parse "Code: `text`"
+
+    expected = doc(para("Code: <code>text</code>"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_entity_dec
     doc = parse "Entity: &#65;"
 
