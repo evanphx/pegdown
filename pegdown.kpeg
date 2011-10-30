@@ -2,6 +2,10 @@
 
 %% {
 
+# Limitations:
+#
+# * Link titles are not used
+
   require 'rubygems'
   require 'rdoc'
   require 'rdoc/markup/to_joined_paragraph'
@@ -64,15 +68,27 @@
     end
   end
 
+  ##
+  # Finds a link reference for +label+ and creates a new link to it with
+  # +content+ as the link text.  If +label+ has not be encountered in the
+  # document a placeholder is created that will be filled later.
+
+  def link_to content, label = content
+    if ref = @references[label] then
+      "{#{content}}[#{ref}]"
+    else
+      ref = @unlinked[label] || ""
+      @unlinked[label] = ref
+      ["{#{content}}[", ref, "]"]
+    end
+  end
+
   alias peg_parse parse
 
   def parse markdown
     setup_parser markdown, @debug
 
-    # label => link
     @references = {}
-
-    # label => empty string to call #replace on with link
     @unlinked   = {}
 
     peg_parse
@@ -84,6 +100,17 @@
     doc
   end
 
+  ##
+  # Stores +label+ as a reference to +link+ and fills in previously unknown
+  # link references.
+
+  def reference label, link
+    if ref = @unlinked.delete(label) then
+      ref.replace link
+    end
+
+    @references[label] = ref
+  end
 }
 
 root = Doc
@@ -585,28 +612,10 @@ Link =  ExplicitLink | ReferenceLink | AutoLink
 ReferenceLink = ReferenceLinkDouble | ReferenceLinkSingle
 
 ReferenceLinkDouble = Label:content < Spnl > !"[]" Label:label
-                      { if ref = @references[label] then
-                          "{#{content}}[#{ref}]"
-                        else
-                          ref = @unlinked[label] || ""
-                          @unlinked[label] = ref
-                          ["{#{content}}[", ref, "]"]
-                        end
-                      }
+                      { link_to content, label }
 
-ReferenceLinkSingle =  Label:a < (Spnl "[]")? >
-                       {   raise 'link match;
-                           if (find_reference(&match, a->children)) {
-                               $$ = mk_link(a->children, match.url, match.title);
-                               free(a);
-                           }
-                           else {
-                               element *result;
-                               result = mk_element(LIST);
-                               result->children = cons(mk_str("["), cons(a, cons(mk_str("]"), mk_str(yytext))));
-                               $$ = result;
-                           }'
-                       }
+ReferenceLinkSingle = Label:content < (Spnl "[]")? >
+                      { link_to content }
 
 ExplicitLink =  Label:l Spnl "(" Sp Source:s Spnl Title:t Sp ")"
                 { raise '$$ = mk_link(l->children, s->contents.str, t->contents.str);
@@ -642,12 +651,7 @@ AutoLinkEmail = "<" < /[-A-Za-z0-9+_]+/ "@" ( !Newline !">" . )+ > ">"
 Reference = NonindentSpace !"[]"
               Label:label ":" Spnl RefSrc:link RefTitle:title BlankLine+
             { # TODO use title
-              if ref = @unlinked.delete(label) then
-                ref.replace link
-              end
-
-              @references[label] = ref
-
+              reference label, link
               nil
             }
 
