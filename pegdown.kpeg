@@ -5,6 +5,7 @@
 # Limitations:
 #
 # * Link titles are not used
+# * Image links are not always generated correctly
 
   require 'rubygems'
   require 'rdoc'
@@ -600,14 +601,8 @@ StrongUl =  TwoUlOpen
             TwoUlClose:l { a << l }
             { a }
 
-Image = "!" ( ExplicitLink | ReferenceLink )
-        { raise 'if ($$->key == LINK) {
-              $$->key = IMAGE;
-          } else {
-              element *result;
-              result = $$;
-              $$->children = cons(mk_str("!"), result->children);
-          } ' }
+Image = "!" ( ExplicitLink | ReferenceLink ):a
+        { a }
 
 Link =  ExplicitLink | ReferenceLink | AutoLink
 
@@ -620,19 +615,16 @@ ReferenceLinkSingle = Label:content < (Spnl "[]")? >
                       { link_to content }
 
 ExplicitLink =  Label:l Spnl "(" Sp Source:s Spnl Title:t Sp ")"
-                { raise '$$ = mk_link(l->children, s->contents.str, t->contents.str);
-                  free_element(s);
-                  free_element(t);
-                  free(l);' }
+                { s }
 
 Source  = ( "<" < SourceContents > ">" | < SourceContents > )
-          { raise " $$ = mk_str(yytext); " }
+          { text }
 
 SourceContents = ( ( !"(" !")" !">" Nonspacechar )+ | "(" SourceContents ")")*
                  | ""
 
-Title = ( TitleSingle | TitleDouble | < "" > )
-        { raise " $$ = mk_str(yytext); " }
+Title = ( TitleSingle | TitleDouble | < "" > ):a
+        { a }
 
 TitleSingle = "'" < ( !( "'" Sp ( ")" | Newline ) ) . )* > "'"
 

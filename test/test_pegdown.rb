@@ -177,6 +177,14 @@ heading
     assert_equal expected, doc
   end
 
+  def test_parse_image
+    doc = parse "image ![alt text](path/to/image.jpg)"
+
+    expected = doc(para("image path/to/image.jpg"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_line_braek
     doc = parse "Some text  \nwith extra lines"
 
