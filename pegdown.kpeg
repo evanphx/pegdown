@@ -2,6 +2,10 @@
 
 %% {
 
+  require 'rubygems'
+  require 'rdoc'
+  require 'rdoc/markup/to_joined_paragraph'
+
   EXTENSIONS = []
 
   def self.extension name
@@ -37,8 +41,11 @@
   end
 
   def initialize extensions = [], debug = false
+    @debug      = debug
+    @formatter  = RDoc::Markup::ToJoinedParagraph.new
     @extensions = extensions
-    @debug = debug
+
+    @references = nil
   end
 
   def extension? name
@@ -62,16 +69,23 @@
   def parse markdown
     setup_parser markdown, @debug
 
+    @references = {}
+    @unlinked   = {}
+
     peg_parse
 
-    result
+    doc = result
+
+    doc.accept @formatter
+
+    doc
   end
 
 }
 
 root = Doc
 
-Doc =       BOM? Block*:a { RDoc::Markup::Document.new(*a) }
+Doc =       BOM? Block*:a { RDoc::Markup::Document.new(*a.compact) }
 
 Block =     BlankLine*
             ( BlockQuote
@@ -460,7 +474,7 @@ StyleBlock =    < InStyleTags >
 
 Inlines  =  ( !Endline Inline:i { i }
             | Endline:c &Inline { c } )+:chunks Endline?
-            { chunks.join }
+            { chunks }
 
 Inline  = Str
         | Endline
@@ -567,21 +581,15 @@ Link =  ExplicitLink | ReferenceLink | AutoLink
 
 ReferenceLink = ReferenceLinkDouble | ReferenceLinkSingle
 
-ReferenceLinkDouble =  Label:a < Spnl > !"[]" Label:b
-                       {   raise 'link match;
-                           if (find_reference(&match, b->children)) {
-                               $$ = mk_link(a->children, match.url, match.title);
-                               free(a);
-                               free_element_list(b);
-                           } else {
-                               element *result;
-                               result = mk_element(LIST);
-                               result->children = cons(mk_str("["), cons(a, cons(mk_str("]"), cons(mk_str(yytext),
-                                                   cons(mk_str("["), cons(b, mk_str("]")))))));
-                               $$ = result;
-                           }
-                           '
-                       }
+ReferenceLinkDouble = Label:content < Spnl > !"[]" Label:label
+                      { if ref = @references[label] then
+                          "{#{content}}[#{ref}]"
+                        else # TODO multiple unlinked
+                          ref = ""
+                          @unlinked[label] = ref
+                          ["{#{content}}[", ref, "]"]
+                        end
+                      }
 
 ReferenceLinkSingle =  Label:a < (Spnl "[]")? >
                        {   raise 'link match;
@@ -628,33 +636,35 @@ AutoLinkEmail = "<" < /[-A-Za-z0-9+_]+/ "@" ( !Newline !">" . )+ > ">"
                     free(mailto);'
                 }
 
-Reference = NonindentSpace !"[]" Label:l ":" Spnl RefSrc:s RefTitle:t BlankLine+
-            { raise ' $$ = mk_link(l->children, s->contents.str, t->contents.str);
-              free_element(s);
-              free_element(t);
-              free(l);
-              $$->key = REFERENCE; '}
+Reference = NonindentSpace !"[]"
+              Label:label ":" Spnl RefSrc:link RefTitle:title BlankLine+
+            { # TODO use title
+              if ref = @unlinked.delete(label) then
+                ref.replace link
+              end
 
-Label = "[" ( !"^" &{ raise " notes? " } | &. &{ raise "!notes? " } )
+              @references[label] = ref
+
+              nil
+            }
+
+Label = "[" ( !"^" &{ notes? } | &. &{ !notes? } )
         StartList:a
-        ( !"]" Inline { raise " a = cons($$, a); " } )*
+        ( !"]" Inline:l { a << l } )*
         "]"
-        { raise " $$ = mk_list(LIST, a); " }
+        { a.join }
 
-RefSrc = < Nonspacechar+ > 
-         { raise '$$ = mk_str(yytext); 
-           $$->key = HTML;' }
+RefSrc = < Nonspacechar+ > { text }
 
-RefTitle =  ( RefTitleSingle | RefTitleDouble | RefTitleParens | EmptyTitle )
-            { raise " $$ = mk_str(yytext); " }
+RefTitle = ( RefTitleSingle | RefTitleDouble | RefTitleParens | EmptyTitle )
 
 EmptyTitle = < "" >
 
-RefTitleSingle = Spnl "'" < ( !( "'" Sp Newline | Newline ) . )* > "'"
+RefTitleSingle = Spnl "'" < ( !( "'" Sp Newline | Newline ) . )* > "'" { text }
 
-RefTitleDouble = Spnl "\"" < ( !("\"" Sp Newline | Newline) . )* > "\""
+RefTitleDouble = Spnl "\"" < ( !("\"" Sp Newline | Newline) . )* > "\"" { text }
 
-RefTitleParens = Spnl "(" < ( !(")" Sp Newline | Newline) . )* > ")"
+RefTitleParens = Spnl "(" < ( !(")" Sp Newline | Newline) . )* > ")" { text }
 
 References = StartList:a
              ( b:reference { raise " a = cons(b, a); " } | SkipBlock )*

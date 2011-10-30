@@ -127,6 +127,19 @@ heading
     assert_equal expected, doc
   end
 
+  def test_parse_link_reference
+    doc = parse <<-MD
+This is [an example][id] reference-style link.
+
+[id]: http://example.com "Optional Title Here"
+    MD
+
+    expected = doc(
+      para("This is {an example}[http://example.com] reference-style link."))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_list_bullet
     doc = parse <<-MD
 * one
@@ -227,8 +240,7 @@ heading
   def test_parse_para_multiline
     doc = parse "one\ntwo"
 
-    expected = @RM::Document.new(
-      @RM::Paragraph.new("one\n", "two"))
+    expected = doc(para("one\ntwo"))
 
     assert_equal expected, doc
   end
@@ -295,6 +307,14 @@ heading
     expected = @RM::Document.new(@RM::Verbatim.new(["text\n"]))
 
     assert_equal expected, doc
+  end
+
+  def doc *a
+    @RM::Document.new(*a)
+  end
+
+  def para *a
+    @RM::Paragraph.new(*a)
   end
 
   def parse text
