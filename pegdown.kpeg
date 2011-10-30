@@ -69,7 +69,10 @@
   def parse markdown
     setup_parser markdown, @debug
 
+    # label => link
     @references = {}
+
+    # label => empty string to call #replace on with link
     @unlinked   = {}
 
     peg_parse
