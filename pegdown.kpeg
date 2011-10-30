@@ -633,14 +633,10 @@ TitleDouble = "\"" < ( !( "\"" Sp ( ")" | Newline ) ) . )* > "\""
 AutoLink = AutoLinkUrl | AutoLinkEmail
 
 AutoLinkUrl =   "<" < /[A-Za-z]+/ "://" ( !Newline !">" . )+ > ">"
-                { raise "   $$ = mk_link(mk_str(yytext), yytext, ""); " }
+                { text }
 
 AutoLinkEmail = "<" < /[-A-Za-z0-9+_]+/ "@" ( !Newline !">" . )+ > ">"
-                {  raise ' char *mailto = malloc(strlen(yytext) + 8);
-                    sprintf(mailto, "mailto:%s", yytext);
-                    $$ = mk_link(mk_str(yytext), mailto, "");
-                    free(mailto);'
-                }
+                { "mailto:#{text}" }
 
 Reference = NonindentSpace !"[]"
               Label:label ":" Spnl RefSrc:link RefTitle:title BlankLine+

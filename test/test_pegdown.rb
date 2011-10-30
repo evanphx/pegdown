@@ -21,6 +21,22 @@ class TestPegdown < MiniTest::Unit::TestCase
     s.chomp
   end
 
+  def test_parse_auto_link_email
+    doc = parse "Autolink: <nobody@example>"
+
+    expected = doc(para("Autolink: mailto:nobody@example"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_auto_link_url
+    doc = parse "Autolink: <http://example>"
+
+    expected = doc(para("Autolink: http://example"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_block_quote
     doc = parse <<-BLOCK_QUOTE
 > this is
