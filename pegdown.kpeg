@@ -29,6 +29,11 @@
   end
 
   ##
+  # Allow style blocks
+
+  extension :css
+
+  ##
   # Allow HTML
 
   extension :html
@@ -492,13 +497,9 @@ StyleClose =    "<" Spnl "/" ("style" | "STYLE") Spnl ">"
 InStyleTags =   StyleOpen (!StyleClose .)* StyleClose
 StyleBlock =    < InStyleTags >
                 BlankLine*
-                {   raise 'if (extension(EXT_FILTER_STYLES)) {
-                        $$ = mk_list(LIST, NULL);
-                    } else {
-                        $$ = mk_str(yytext);
-                        $$->key = HTMLBLOCK;
-                    }'
-                }
+                { if css? then
+                    RDoc::Markup::Raw.new text
+                  end }
 
 Inlines  =  ( !Endline Inline:i { i }
             | Endline:c &Inline { c } )+:chunks Endline?

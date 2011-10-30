@@ -454,16 +454,24 @@ This is [an example][] reference-style link.
     assert_equal expected, doc
   end
 
-#  def test_parse_style
-#    doc = parse <<-MD
-#<style></style>
-#    MD
-#
-#    expected = @RM::Document.new(
-#      @RM::Paragraph.new("it worked"))
-#
-#    assert_equal expected, doc
-#  end
+  def test_parse_style
+    @parser.css = true
+
+    doc = parse "<style>h1 { color: red }</style>\n"
+
+    expected = doc(
+      @RM::Raw.new("<style>h1 { color: red }</style>"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_style
+    doc = parse "<style>h1 { color: red }</style>\n"
+
+    expected = doc()
+
+    assert_equal expected, doc
+  end
 
   def test_parse_verbatim
     doc = parse <<-MD
