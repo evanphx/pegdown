@@ -28,11 +28,6 @@
 
   extension :notes
 
-  ##
-  # Use the smart typography extension?
-
-  extension :smart_typography
-
   def self.parse text
     parser = new text
 
@@ -481,7 +476,6 @@ Inline  = Str
         | RawHtml
         | Entity
         | EscapedChar
-        | Smart
         | Symbol
 
 Space = Spacechar+
@@ -489,15 +483,11 @@ Space = Spacechar+
           $$->key = SPACE;';
           " " }
 
-Str = StartList:a < NormalChar+ > { a = text } # raise " a = cons(mk_str(yytext), a); " }
-      ( StrChunk { raise " a = cons($$, a); " } )*
-      { a } #  { raise " if (a->next == NULL) { $$ = a; } else { $$ = mk_list(LIST, a); } " }
+Str = StartList:a
+      < NormalChar+ > { a = text } # raise " a = cons(mk_str(yytext), a); " }
+      ( StrChunk:c { a << c } )* { a } #  { raise " if (a->next == NULL) { $$ = a; } else { $$ = mk_list(LIST, a); } " }
 
-StrChunk = < (NormalChar | "_"+ &Alphanumeric)+ > { raise " $$ = mk_str(yytext); " } |
-           AposChunk
-
-AposChunk = &{ smart_typography? } "'" &Alphanumeric
-      { raise " $$ = mk_element(APOSTROPHE); " }
+StrChunk = < (NormalChar | "_"+ &Alphanumeric)+ > { text }
 
 EscapedChar =   "\\" !Newline < /[\`|*_{}\[\]()#+.!><-]/ >
                 { raise " $$ = mk_str(yytext); " }
@@ -517,8 +507,8 @@ TerminalEndline = Sp Newline Eof
 LineBreak = "  " NormalEndline
             { raise " $$ = mk_element(LINEBREAK); " }
 
-Symbol =    < SpecialChar >
-            { raise " $$ = mk_str(yytext); " }
+Symbol = < SpecialChar >
+         { text }
 
 UlOrStarLine =  (UlLine | StarLine) { raise " $$ = mk_str(yytext); " }
 StarLine =      < "****" "*"* > | < Spacechar "*"+ &Spacechar >
@@ -748,45 +738,7 @@ SkipBlock = ( !BlankLine RawLine )+ BlankLine*
 
 # Syntax extensions
 
-ExtendedSpecialChar = &{ smart_typography? } ("." | "-" | "'" | "\"")
-                    | &{ notes? } ( "^" )
-
-Smart = &{ smart_typography? }
-        ( Ellipsis | Dash | SingleQuoted | DoubleQuoted | Apostrophe )
-
-Apostrophe = "'"
-             { raise " $$ = mk_element(APOSTROPHE); " }
-
-Ellipsis = ("..." | ". . .")
-           { raise " $$ = mk_element(ELLIPSIS); " }
-
-Dash = EmDash | EnDash
-
-EnDash = "-" &Digit
-         { raise " $$ = mk_element(ENDASH); " }
-
-EmDash = ("---" | "--")
-         { raise " $$ = mk_element(EMDASH); " }
-
-SingleQuoteStart = "'" !(Spacechar | Newline)
-
-SingleQuoteEnd = "'" !Alphanumeric
-
-SingleQuoted = SingleQuoteStart
-               StartList:a
-               ( !SingleQuoteEnd b:inline { raise " a = cons(b, a); " } )+
-               SingleQuoteEnd
-               { raise " $$ = mk_list(SINGLEQUOTED, a); " }
-
-DoubleQuoteStart = "\""
-
-DoubleQuoteEnd = "\""
-
-DoubleQuoted =  DoubleQuoteStart
-                StartList:a
-                ( !DoubleQuoteEnd b:inline { raise " a = cons(b, a); " } )+
-                DoubleQuoteEnd
-                { raise " $$ = mk_list(DOUBLEQUOTED, a); " }
+ExtendedSpecialChar = &{ notes? } ( "^" )
 
 NoteReference = &{ notes? }
                 RawNoteReference:ref

@@ -118,7 +118,7 @@ heading
     assert_equal expected, doc
   end
 
-  def test_parse_html_address_no
+  def test_parse_html_address_no_html
     doc = parse "<address>Links here</address>"
 
     expected = @RM::Document.new(
