@@ -98,6 +98,24 @@ a block quote
     assert_equal expected, doc
   end
 
+  def test_parse_emphasis_star
+    doc = parse "it *works*\n"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("it _works_"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_emphasis_underscore
+    doc = parse "it _works_\n"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("it _works_"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_escape
     doc = parse "Backtick: \\`"
 
@@ -363,6 +381,24 @@ This is [an example][] reference-style link.
     doc = parse "* * *\n\n"
 
     expected = @RM::Document.new(@RM::Rule.new(1))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_strong_star
+    doc = parse "it **works**\n"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("it *works*"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_strong_underscore
+    doc = parse "it __works__\n"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("it *works*"))
 
     assert_equal expected, doc
   end

@@ -562,42 +562,43 @@ UlLine   = < "____" "_"* > { text } |
 Emph =      EmphStar | EmphUl
 
 OneStarOpen  =  !StarLine "*" !Spacechar !Newline
-OneStarClose =  !Spacechar !Newline a:inline !StrongStar "*" { raise " $$ = a; " }
+OneStarClose =  !Spacechar !Newline Inline:a !StrongStar "*" { "_#{a}_" }
 
 EmphStar =  OneStarOpen
             StartList:a
-            ( !OneStarClose Inline { raise " a = cons($$, a); " } )*
-            OneStarClose { raise " a = cons($$, a); " }
-            { raise " $$ = mk_list(EMPH, a); " }
+            ( !OneStarClose Inline:l { a << l } )*
+            OneStarClose:l { a << l }
+            { a }
 
 OneUlOpen  =  !UlLine "_" !Spacechar !Newline
-OneUlClose =  !Spacechar !Newline a:inline !StrongUl "_" !Alphanumeric { raise " $$ = a; " }
+OneUlClose =  !Spacechar !Newline Inline:a !StrongUl "_" !Alphanumeric
+              { "_#{a}_" }
 
 EmphUl =    OneUlOpen
             StartList:a
-            ( !OneUlClose Inline { raise " a = cons($$, a); " } )*
-            OneUlClose { raise " a = cons($$, a); " }
-            { raise " $$ = mk_list(EMPH, a); " }
+            ( !OneUlClose Inline:l { a << l } )*
+            OneUlClose:l { a << l }
+            { a }
 
 Strong = StrongStar | StrongUl
 
 TwoStarOpen =   !StarLine "**" !Spacechar !Newline
-TwoStarClose =  !Spacechar !Newline a:inline "**" { raise " $$ = a; " }
+TwoStarClose =  !Spacechar !Newline Inline:a "**" { "*#{a}*" }
 
 StrongStar =    TwoStarOpen
                 StartList:a
-                ( !TwoStarClose Inline { raise " a = cons($$, a); " } )*
-                TwoStarClose { raise " a = cons($$, a); " }
-                { raise " $$ = mk_list(STRONG, a); " }
+                ( !TwoStarClose Inline:l { a << l } )*
+                TwoStarClose:l { a << l }
+                { a }
 
 TwoUlOpen =     !UlLine "__" !Spacechar !Newline
-TwoUlClose =    !Spacechar !Newline a:inline "__" !Alphanumeric { raise " $$ = a; " }
+TwoUlClose =    !Spacechar !Newline Inline:a "__" !Alphanumeric { "*#{a}*" }
 
 StrongUl =  TwoUlOpen
             StartList:a
-            ( !TwoUlClose Inline { raise " a = cons($$, a); " } )*
-            TwoUlClose { raise " a = cons($$, a); " }
-            { raise " $$ = mk_list(STRONG, a); " }
+            ( !TwoUlClose Inline:a { a << l } )*
+            TwoUlClose:l { a << l }
+            { a }
 
 Image = "!" ( ExplicitLink | ReferenceLink )
         { raise 'if ($$->key == LINK) {
