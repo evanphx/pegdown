@@ -528,13 +528,12 @@ Space = Spacechar+
           " " }
 
 Str = StartList:a
-      < NormalChar+ > { a = text } # raise " a = cons(mk_str(yytext), a); " }
-      ( StrChunk:c { a << c } )* { a } #  { raise " if (a->next == NULL) { $$ = a; } else { $$ = mk_list(LIST, a); } " }
+      < NormalChar+ > { a = text }
+      ( StrChunk:c { a << c } )* { a }
 
 StrChunk = < (NormalChar | "_"+ &Alphanumeric)+ > { text }
 
-EscapedChar =   "\\" !Newline < /[\`|*_{}\[\]()#+.!><-]/ >
-                { raise " $$ = mk_str(yytext); " }
+EscapedChar =   "\\" !Newline < /[\`|*_{}\[\]()#+.!><-]/ > { text }
 
 Entity =    ( HexEntity | DecEntity | CharEntity )
             { raise " $$ = mk_str(yytext); $$->key = HTML; " }

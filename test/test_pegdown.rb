@@ -74,6 +74,14 @@ a block quote
     assert_equal expected, doc
   end
 
+  def test_parse_escape
+    doc = parse "Backtick: \\`"
+
+    expected = doc(para("Backtick: `"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_heading_atx
     doc = parse "# heading\n"
 
