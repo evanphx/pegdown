@@ -181,6 +181,25 @@ heading
     assert_equal expected, doc
   end
 
+  def test_parse_html
+    @parser.html = true
+
+    doc = parse "<address>Links here</address>\n"
+
+    expected = doc(
+      @RM::Raw.new("<address>Links here</address>"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_html_no_html
+    doc = parse "<address>Links here</address>\n"
+
+    expected = doc()
+
+    assert_equal expected, doc
+  end
+
   def test_parse_image
     doc = parse "image ![alt text](path/to/image.jpg)"
 

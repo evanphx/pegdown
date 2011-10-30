@@ -18,11 +18,12 @@ class RDoc::Markup::ToJoinedParagraph < RDoc::Markup::Formatter
 
   alias accept_block_quote     ignore
   alias accept_heading         ignore
-  alias accept_rule            ignore
-  alias accept_list_start      ignore
   alias accept_list_end        ignore
-  alias accept_list_item_start ignore
   alias accept_list_item_end   ignore
+  alias accept_list_item_start ignore
+  alias accept_list_start      ignore
+  alias accept_raw             ignore
+  alias accept_rule            ignore
   alias accept_verbatim        ignore
 
 end

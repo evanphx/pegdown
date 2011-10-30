@@ -410,13 +410,9 @@ HtmlBlockInTags = HtmlBlockAddress
 
 HtmlBlock = < ( HtmlBlockInTags | HtmlComment | HtmlBlockSelfClosing ) >
             BlankLine+
-            {   raise 'if (extension(EXT_FILTER_HTML)) {
-                    $$ = mk_list(LIST, NULL);
-                } else {
-                    $$ = mk_str(yytext);
-                    $$->key = HTMLBLOCK;
-                }'
-            }
+            { if html? then
+                RDoc::Markup::Raw.new text
+              end }
 
 HtmlBlockSelfClosing = "<" Spnl HtmlBlockType Spnl HtmlAttribute* "/" Spnl ">"
 
