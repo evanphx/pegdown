@@ -10,6 +10,8 @@ class TestPegdown < MiniTest::Unit::TestCase
 
   def setup
     @RM = RDoc::Markup
+
+    @parser = Pegdown.new
   end
 
   def mu_pp obj
@@ -101,6 +103,26 @@ heading
 
     expected = @RM::Document.new(
       @RM::Heading.new(1, "heading"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_html_address
+    @parser.html = true
+
+    doc = parse "<address>Links here</address>"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("<address>Links here</address>"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_html_address_no
+    doc = parse "<address>Links here</address>"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("Links here"))
 
     assert_equal expected, doc
   end
@@ -276,7 +298,7 @@ heading
   end
 
   def parse text
-    Pegdown.parse text
+    @parser.parse text
   end
 
 end
