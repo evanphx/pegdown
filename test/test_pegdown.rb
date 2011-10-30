@@ -140,6 +140,22 @@ This is [an example][id] reference-style link.
     assert_equal expected, doc
   end
 
+  def test_parse_link_reference_many
+    doc = parse <<-MD
+This is [an example][id] reference-style link.
+
+And [another][id].
+
+[id]: http://example.com "Optional Title Here"
+    MD
+
+    expected = doc(
+      para("This is {an example}[http://example.com] reference-style link."),
+      para("And {another}[http://example.com]."))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_list_bullet
     doc = parse <<-MD
 * one

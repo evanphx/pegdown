@@ -587,8 +587,8 @@ ReferenceLink = ReferenceLinkDouble | ReferenceLinkSingle
 ReferenceLinkDouble = Label:content < Spnl > !"[]" Label:label
                       { if ref = @references[label] then
                           "{#{content}}[#{ref}]"
-                        else # TODO multiple unlinked
-                          ref = ""
+                        else
+                          ref = @unlinked[label] || ""
                           @unlinked[label] = ref
                           ["{#{content}}[", ref, "]"]
                         end
