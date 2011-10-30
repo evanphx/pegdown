@@ -201,7 +201,7 @@ heading
     assert_equal expected, doc
   end
 
-  def test_parse_line_braek
+  def test_parse_line_break
     doc = parse "Some text  \nwith extra lines"
 
     expected = doc(

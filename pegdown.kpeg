@@ -663,10 +663,6 @@ RefTitleDouble = Spnl "\"" < ( !("\"" Sp Newline | Newline) . )* > "\"" { text }
 
 RefTitleParens = Spnl "(" < ( !(")" Sp Newline | Newline) . )* > ")" { text }
 
-References = StartList:a
-             ( b:reference { raise " a = cons(b, a); " } | SkipBlock )*
-             { raise " references = reverse(a); " }
-
 Ticks1 = "`" !"`"
 Ticks2 = "``" !"`"
 Ticks3 = "```" !"`"
