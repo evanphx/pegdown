@@ -551,9 +551,13 @@ LineBreak = < "  " NormalEndline > { text }
 Symbol = < SpecialChar >
          { text }
 
-UlOrStarLine =  (UlLine | StarLine) { raise " $$ = mk_str(yytext); " }
-StarLine =      < "****" "*"* > | < Spacechar "*"+ &Spacechar >
-UlLine   =      < "____" "_"* > | < Spacechar "_"+ &Spacechar >
+# This keeps the parser from getting bogged down on long strings of '*' or '_',
+# or strings of '*' or '_' with space on each side:
+UlOrStarLine =  (UlLine | StarLine):a { a }
+StarLine = < "****" "*"* > { text } |
+           < Spacechar "*"+ &Spacechar > { text }
+UlLine   = < "____" "_"* > { text } |
+           < Spacechar "_"+ &Spacechar > { text }
 
 Emph =      EmphStar | EmphUl
 

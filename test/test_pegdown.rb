@@ -268,6 +268,24 @@ This is [an example][] reference-style link.
     assert_equal expected, doc
   end
 
+  def test_parse_paragraph
+    doc = parse "it worked\n"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("it worked"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_paragraph_stars
+    doc = parse "it worked ****\n"
+
+    expected = @RM::Document.new(
+      @RM::Paragraph.new("it worked ****"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_paragraph_indent_one
     doc = parse <<-MD
  text
@@ -298,16 +316,7 @@ This is [an example][] reference-style link.
     assert_equal expected, doc
   end
 
-  def test_parse_para
-    doc = parse "it worked\n"
-
-    expected = @RM::Document.new(
-      @RM::Paragraph.new("it worked"))
-
-    assert_equal expected, doc
-  end
-
-  def test_parse_para_multiline
+  def test_parse_paragraph_multiline
     doc = parse "one\ntwo"
 
     expected = doc(para("one\ntwo"))
@@ -315,7 +324,7 @@ This is [an example][] reference-style link.
     assert_equal expected, doc
   end
 
-  def test_parse_para_two
+  def test_parse_paragraph_two
     doc = parse "one\n\ntwo"
 
     expected = @RM::Document.new(
