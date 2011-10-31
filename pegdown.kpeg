@@ -6,6 +6,7 @@
 #
 # * Link titles are not used
 # * Image links are not always generated correctly
+# * Footnotes are collapsed into a single paragraph
 
   require 'rubygems'
   require 'rdoc'
@@ -798,11 +799,12 @@ NoteReference = &{ notes? }
 
 RawNoteReference = "[^" < ( !Newline !"]" . )+ > "]" { text }
 
+# TODO multiple paragraphs for a footnote
 Note =          &{ notes? }
                 NonindentSpace RawNoteReference:ref ":" Sp
                 StartList:a
                 ( RawNoteBlock:l )
-                ( &Indent RawNoteBlock { raise " a = cons($$, a); " } )*
+                ( &Indent RawNoteBlock:i { a.concat i } )*
                 { a.unshift note ref
                   @footnotes << RDoc::Markup::Paragraph.new(*a)
                   nil

@@ -334,6 +334,25 @@ Some text.[^1]
     assert_equal expected, doc
   end
 
+  def test_parse_note_indent
+    @parser.notes = true
+
+    doc = parse <<-MD
+Some text.[^1]
+
+[^1]: With a footnote
+
+    more
+    MD
+
+    expected = doc(
+      para("Some text.{*1}[rdoc-label:foottext-1:footmark-1]"),
+      @RM::Rule.new(1),
+      para("{^1}[rdoc-label:footmark-1:foottext-1] With a footnote\n\nmore\n"))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_note_inline
     @parser.notes = true
 
