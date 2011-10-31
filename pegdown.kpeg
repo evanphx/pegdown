@@ -56,7 +56,12 @@
     @formatter  = RDoc::Markup::ToJoinedParagraph.new
     @extensions = extensions
 
-    @references = nil
+    @references          = nil
+    @unlinked_references = nil
+
+    @footnotes      = nil
+    @notes          = nil
+    @unlinked_notes = nil
   end
 
   def extension? name
@@ -81,12 +86,28 @@
   # document a placeholder is created that will be filled later.
 
   def link_to content, label = content
+    raise 'enable notes extension' if content.start_with? '^' and label == content
     if ref = @references[label] then
       "{#{content}}[#{ref}]"
     else
-      ref = @unlinked[label] || ""
-      @unlinked[label] = ref
+      ref = @unlinked_references[label] || ""
+      @unlinked_references[label] = ref
       ["{#{content}}[", ref, "]"]
+    end
+  end
+
+  ##
+  # Finds a footnote reference for +label+ and creates a new link to it with
+  # +content+ as the link text.  If +label+ has not be encountered in the
+  # document a placeholder is created that will be filled later.
+
+  def note_for label
+    if ref = @notes[label] then
+      "{*#{label}}[#{ref}]"
+    else
+      ref = @unlinked_notes[label] || ""
+      @unlinked_notes[label] = ref
+      ["{*#{label}}[", ref, "]"]
     end
   end
 
@@ -95,12 +116,25 @@
   def parse markdown
     setup_parser markdown, @debug
 
-    @references = {}
-    @unlinked   = {}
+    if notes? then
+      @footnotes      = []
+      @notes          = {}
+      @unlinked_notes = {}
+    end
+
+    @references          = {}
+    @unlinked_references = {}
 
     peg_parse
 
     doc = result
+
+    if notes? then
+      unless @footnotes.empty? then
+        doc << RDoc::Markup::Rule.new(1)
+        doc.push(*@footnotes)
+      end
+    end
 
     doc.accept @formatter
 
@@ -112,11 +146,26 @@
   # link references.
 
   def reference label, link
-    if ref = @unlinked.delete(label) then
+    if ref = @unlinked_references.delete(label) then
       ref.replace link
     end
 
-    @references[label] = ref
+    @references[label] = link
+  end
+
+  ##
+  # Stores +label+ as a note and fills in previously unknown note references.
+
+  def note label
+    foottext = "rdoc-label:foottext-#{label}:footmark-#{label}"
+
+    if ref = @unlinked_notes.delete(label) then
+      ref.replace foottext
+    end
+
+    @notes[label] = foottext
+
+    "{^1}[rdoc-label:footmark-#{label}:foottext-#{label}] "
   end
 }
 
@@ -745,49 +794,30 @@ ExtendedSpecialChar = &{ notes? } ( "^" )
 
 NoteReference = &{ notes? }
                 RawNoteReference:ref
-                {   raise 'element *match;
-                    if (find_note(&match, ref->contents.str)) {
-                        $$ = mk_element(NOTE);
-                        assert(match->children != NULL);
-                        $$->children = match->children;
-                        $$->contents.str = 0;
-                    } else {
-                        char *s;
-                        s = malloc(strlen(ref->contents.str) + 4);
-                        sprintf(s, "[^%s]", ref->contents.str);
-                        $$ = mk_str(s);
-                        free(s);
-                    }'
-                }
+                { note_for ref }
 
-RawNoteReference = "[^" < ( !Newline !"]" . )+ > "]"
-                   { raise " $$ = mk_str(yytext); " }
+RawNoteReference = "[^" < ( !Newline !"]" . )+ > "]" { text }
 
 Note =          &{ notes? }
-                NonindentSpace ref:rawNoteReference ":" Sp
+                NonindentSpace RawNoteReference:ref ":" Sp
                 StartList:a
-                ( RawNoteBlock { raise " a = cons($$, a); " } )
+                ( RawNoteBlock:l )
                 ( &Indent RawNoteBlock { raise " a = cons($$, a); " } )*
-                {   raise '$$ = mk_list(NOTE, a);
-                    $$->contents.str = strdup(ref->contents.str); '
+                { a.unshift note ref
+                  @footnotes << RDoc::Markup::Paragraph.new(*a)
+                  nil
                 }
 
-InlineNote =    &{ notes? }
-                "^["
-                StartList:a
-                ( !"]" Inline { raise " a = cons($$, a); " } )+
-                "]"
-                { raise '$$ = mk_list(NOTE, a);
-                  $$->contents.str = 0; '}
+InlineNote = &{ notes? }
+             "^["
+             StartList:a
+             ( !"]" Inline { raise " a = cons($$, a); " } )+
+             "]"
+             { raise '$$ = mk_list(NOTE, a);
+               $$->contents.str = 0; '}
 
-Notes =         StartList:a
-                ( b:note { raise " a = cons(b, a); " } | SkipBlock )*
-                { raise " notes = reverse(a); " }
-
-RawNoteBlock =  StartList:a
-                    ( !BlankLine OptionallyIndentedLine { raise " a = cons($$, a); " } )+
-                ( < BlankLine* > { raise " a = cons(mk_str(yytext), a); " } )
-                {   raise '$$ = mk_str_from_list(a, true);
-                    $$->key = RAW; '
-                }
+RawNoteBlock = StartList:a
+               ( !BlankLine OptionallyIndentedLine:l { a << l } )+
+               ( < BlankLine* > { a << text } )
+               { a }
 

@@ -317,6 +317,29 @@ This is [an example][] reference-style link.
     assert_equal expected, doc
   end
 
+  def test_parse_note
+    @parser.notes = true
+
+    doc = parse <<-MD
+Some text.[^1]
+
+[^1]: With a footnote
+    MD
+
+    expected = doc(
+      para("Some text.{*1}[rdoc-label:foottext-1:footmark-1]"),
+      @RM::Rule.new(1),
+      para("{^1}[rdoc-label:footmark-1:foottext-1] With a footnote\n"))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_note_no_notes
+    assert_raises RuntimeError do
+      parse "Some text.[^1]"
+    end
+  end
+
   def test_parse_paragraph
     doc = parse "it worked\n"
 
