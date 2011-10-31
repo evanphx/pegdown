@@ -811,10 +811,15 @@ Note =          &{ notes? }
 InlineNote = &{ notes? }
              "^["
              StartList:a
-             ( !"]" Inline { raise " a = cons($$, a); " } )+
+             ( !"]" Inline:l { a << l } )+
              "]"
-             { raise '$$ = mk_list(NOTE, a);
-               $$->contents.str = 0; '}
+             { ref = @footnotes.length + 1
+               a.unshift note ref
+
+               @footnotes << RDoc::Markup::Paragraph.new(*a)
+
+               note_for ref
+             }
 
 RawNoteBlock = StartList:a
                ( !BlankLine OptionallyIndentedLine:l { a << l } )+
