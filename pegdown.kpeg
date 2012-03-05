@@ -81,13 +81,27 @@
     end
   end
 
+  def inner_parse text # :nodoc:
+    parser = clone
+
+    parser.setup_parser text, @debug
+
+    parser.peg_parse
+
+    doc = parser.result
+
+    doc.parts
+  end
+
   ##
   # Finds a link reference for +label+ and creates a new link to it with
   # +content+ as the link text.  If +label+ has not be encountered in the
   # document a placeholder is created that will be filled later.
 
   def link_to content, label = content
-    raise 'enable notes extension' if content.start_with? '^' and label == content
+    raise 'enable notes extension' if
+      content.start_with? '^' and label == content
+
     if ref = @references[label] then
       "{#{content}}[#{ref}]"
     else
@@ -95,6 +109,35 @@
       @unlinked_references[label] = ref
       ["{#{content}}[", ref, "]"]
     end
+  end
+
+  ##
+  # Creates an RDoc::Markup::ListItem from +parsed+ including parsing nested
+  # lists.
+
+  def list_item_from parsed
+    out = RDoc::Markup::ListItem.new nil
+
+    parsed.each do |part|
+      case part
+      when String then
+        case out.parts.last
+        when RDoc::Markup::Paragraph then
+          out.parts.last << part
+        else
+          out << RDoc::Markup::Paragraph.new(part)
+        end
+      when RDoc::Markup::Paragraph then
+        out << part
+      when RDoc::Markup::Raw then
+        inner = inner_parse part.text
+        out.push(*inner)
+      else
+        raise part.inspect
+      end
+    end
+
+    out
   end
 
   ##
@@ -262,26 +305,29 @@ ListLoose = StartList:a
 ListItem =  ( Bullet | Enumerator )
             StartList:a
             ListBlock:b { a << b }
-            ( ListContinuationBlock { raise " a = cons($$, a); " } )*
-            { RDoc::Markup::ListItem.new(nil, *a) }
+            ( ListContinuationBlock:c { a.push(*c) } )*
+            { list_item_from a }
 
 ListItemTight =
             ( Bullet | Enumerator )
             ListBlock:a
             ( !BlankLine
-              ListContinuationBlock { raise " a = cons($$, a); " } )*
+              ListContinuationBlock:b { a.push(*b) } )*
             !ListContinuationBlock
-            { RDoc::Markup::ListItem.new(nil, a) }
+            { list_item_from a.parts }
 
 ListBlock = !BlankLine Line:a
             ListBlockLine*:c
             { RDoc::Markup::Paragraph.new(a, *c) }
 
-ListContinuationBlock = StartList:a
+ListContinuationBlock = StartList:a { a = [] }
                         ( < BlankLine* >
-                          { a << (text.empty? ? "\001" : text) } )
-                        ( Indent ListBlock { raise " a = cons($$, a); " } )+
-                        { raise "  $$ = mk_str_from_list(a, false); " }
+                          { a << text unless text =~ /\A\n?\z/ } )
+                        ( Indent
+                          ListBlock:b {
+                            a << RDoc::Markup::Raw.new(*b.parts)
+                          } )+
+                        { a }
 
 Enumerator = NonindentSpace [0-9]+ "." Spacechar+
 

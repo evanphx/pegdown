@@ -288,6 +288,60 @@ This is [an example][] reference-style link.
     assert_equal expected, doc
   end
 
+  def test_parse_list_bullet_nest
+    doc = parse <<-MD
+* outer
+    * inner
+    MD
+
+    expected = @RM::Document.new(
+      @RM::List.new(:BULLET, *[
+        @RM::ListItem.new(nil,
+          @RM::Paragraph.new("outer\n"),
+          @RM::List.new(:BULLET, *[
+            @RM::ListItem.new(nil, @RM::Paragraph.new("inner\n"))]))]))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_list_bullet_nest_loose
+    doc = parse <<-MD
+* outer
+
+    * inner
+    MD
+
+    expected = @RM::Document.new(
+      @RM::List.new(:BULLET, *[
+        @RM::ListItem.new(nil,
+          @RM::Paragraph.new("outer\n"),
+          @RM::List.new(:BULLET, *[
+            @RM::ListItem.new(nil, @RM::Paragraph.new("inner\n"))]))]))
+
+    assert_equal expected, doc
+  end
+
+  def test_parse_list_bullet_nest_continue
+    doc = parse <<-MD
+* outer
+    * inner
+  continue
+* outer 2
+    MD
+
+    expected = @RM::Document.new(
+      @RM::List.new(:BULLET, *[
+        @RM::ListItem.new(nil,
+          @RM::Paragraph.new("outer\n"),
+          @RM::List.new(:BULLET, *[
+            @RM::ListItem.new(nil,
+              @RM::Paragraph.new("inner\n   continue\n"))])),
+        @RM::ListItem.new(nil,
+          @RM::Paragraph.new("outer 2\n"))]))
+
+    assert_equal expected, doc
+  end
+
   def test_parse_list_number
     doc = parse <<-MD
 1. one
