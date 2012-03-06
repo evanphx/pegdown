@@ -81,6 +81,10 @@
     end
   end
 
+  ##
+  # Parses +text+ in a clone of this parser.  This is used for handling nested
+  # lists the same way as markdown_parser.
+
   def inner_parse text # :nodoc:
     parser = clone
 
